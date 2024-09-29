@@ -4,17 +4,20 @@ services:
     environment:
       POSTGRES_USER: geckode
       POSTGRES_PASSWORD: s3cr3ts
-      POSTGREST_DB: auth_db
+      POSTGRES_DB: auth_db
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
   auth_service:
     build: ./auth-service
     environment:
-      DATABASE_ULR: postgres://geckode:secr3ts@postgres:5432/auth_db
+      DATABASE_ULR: postgres://geckode:s3cr3ts@postgres:5432/auth_db
     depends_on:
       - postgres
     ports:
       - "8081:8081"
+
+volumes:
+  postgres_data:
