@@ -1,8 +1,7 @@
 package controller
 
 import (
-	"encoding/json"
-	"log"
+	"net/http"
 
 	usermodel "github.com/AndresBC-Dev/kubera-ms/auth-service/entity/user-model"
 	userservice "github.com/AndresBC-Dev/kubera-ms/auth-service/service/user-service"
@@ -10,39 +9,28 @@ import (
 )
 
 type UserController struct {
-	userSevice userservice.UserService
+	userService userservice.UserService // Corrected spelling
 }
 
 func New(us userservice.UserService) *UserController {
 	return &UserController{
-		userSevice: us,
+		userService: us, // Corrected spelling
 	}
 }
 
-func (UC *UserController) CreateUserHandler(c *gin.Context) {
-	userRequest, err := c.Request.GetBody()
-	if err != nil {
-		log.Printf("Error getting body: %v", err)
-		c.JSON(500, gin.H{"error": "Unable to read request body"})
-		return
-	}
-	defer userRequest.Close()
-
-	var userCleaned usermodel.User
-
-	err = json.NewDecoder(userRequest).Decode(&userCleaned)
-	if err != nil {
-		log.Printf("Cannot format the user to user: %v", err)
-		c.JSON(400, gin.H{"error": "Invalid request data"})
+func (c *UserController) CreateUserHandler(ctx *gin.Context) {
+	var user usermodel.User
+	if err := ctx.ShouldBindJSON(&user); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = UC.userSevice.Create(&userCleaned)
+	// Proceed with creating user
+	err := c.userService.Create(&user)
 	if err != nil {
-		log.Printf("Error creating user: %v", err)
-		c.JSON(500, gin.H{"error": "Unable to create user"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(201, gin.H{"message": "User created successfully"}) // Respuesta exitosa
+	ctx.JSON(http.StatusOK, gin.H{"message": "user created"})
 }

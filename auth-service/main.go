@@ -1,25 +1,24 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/AndresBC-Dev/kubera-ms/auth-service/container"
 )
 
 func main() {
 
-	r := mux.NewRouter()
-	r.HandleFunc("/hello", helloHandle)
+	dsn := "host=postgres user=geckode password=s3cr3ts dbname=auth_db port=5432 sslmode=disable TimeZone=America/Bogota"
 
-	err := http.ListenAndServe(":8081", r) // server <-
+	cont, err := container.NewContainer(dsn)
 	if err != nil {
-		log.Fatalf("Error starting server")
+		log.Fatalf("Error initializating container_config: %v", err)
 	}
-	fmt.Println("Connected")
 
-}
-func helloHandle(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello world!")
+	cont.Router.POST("/user", cont.UserController.CreateUserHandler)
+
+	err = cont.Router.Run(":8081")
+	if err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }

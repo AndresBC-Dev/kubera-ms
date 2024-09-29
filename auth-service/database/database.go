@@ -1,7 +1,9 @@
 package database
 
 import (
+	"fmt"
 	"log"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -18,10 +20,19 @@ func New(dsn string) *PostgreSQL {
 }
 
 func CreateConnection(dsn string) (*gorm.DB, error) {
-	connection, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Printf("Cannot open db connection: %v", err)
-		return nil, err
+	var connection *gorm.DB
+	var err error
+	retries := 5
+
+	for retries > 0 {
+		connection, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err == nil {
+			return connection, nil // Conexión exitosa, devolver el objeto DB
+		}
+		log.Printf("Cannot open db connection: %v. Retrying...", err)
+		retries--
+		time.Sleep(2 * time.Second) // Espera de 2 segundos antes del siguiente intento
 	}
-	return connection, nil
+
+	return nil, fmt.Errorf("failed to connect to the database after retries: %v", err)
 }
